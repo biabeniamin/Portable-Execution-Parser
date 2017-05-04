@@ -69,7 +69,7 @@ void parse(__in PTCHAR ptFilePath)
 	//convert pvoid to image_dos_header
 	dHeader = pvFile;
 	//get image_nt_header based on dos header
-	ntHeader = dHeader + dHeader->e_lfanew;
+	ntHeader = (DWORD)dHeader + dHeader->e_lfanew;
 	result.fileHead = parseFileHeader(ntHeader);
 	result.optionalHead = parseOptionalHeader(ntHeader);
 	parseSectionHeader(dHeader);
