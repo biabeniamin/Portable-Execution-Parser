@@ -30,12 +30,20 @@ typedef struct
 } importedEntry,*pImportedEntry;
 typedef struct
 {
+	BYTE Name[50];
+	WORD Ordinal;
+	DWORD Address;
+} exportedEntry,*pExportedEntry;
+typedef struct
+{
 	fileHeader fileHead;
 	optionalHeader optionalHead;
-	DWORD dSectionslHeaderCount;
+	DWORD dwSectionslHeaderCount;
 	pSectionHeader sectionsHeader;
-	DWORD dImportedEntriesCount;
+	DWORD dwImportedEntriesCount;
 	pImportedEntry importedEntries;
+	DWORD dwExportedEntriesCount;
+	pExportedEntry exportedEntries;
 } parseResult,*pParseResult;
 
 #endif // !TYPES

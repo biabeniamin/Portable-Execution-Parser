@@ -2,5 +2,7 @@
 #include<stdio.h>
 #include<tchar.h>
 #include <winnt.h>
-void
+#include "Types.h"
+//parse file
+parseResult
 parse(__in TCHAR filePath);
