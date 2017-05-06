@@ -159,7 +159,7 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 		_tcscpy(exportedEntries[i].Name, pcExportName);
 		LPWORD as = (DWORD)imageDosHeader + lpdwOrdinalArray[i];
 		exportedEntries[i].Ordinal = lpdwOrdinalArray[i];
-		exportedEntries[i].Address = lpdwFunctionsArray[i];
+		exportedEntries[i].Address = lpdwFunctionsArray[lpdwOrdinalArray[i]];
 	}
 	return exportedEntries;
 }
