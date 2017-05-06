@@ -177,7 +177,7 @@ parse(__in PTCHAR ptFilePath)
 	result.fHasSucceed = 0;
 	//open file
 	hFile = CreateFile(ptFilePath,
-		GENERIC_WRITE | GENERIC_READ,
+		GENERIC_READ,
 		0, NULL,
 		OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL,
@@ -192,9 +192,9 @@ parse(__in PTCHAR ptFilePath)
 	//map file
 	hFileMap = CreateFileMapping(hFile,
 		NULL,
-		PAGE_READWRITE,
+		PAGE_READONLY,
 		0,
-		dwFileSize + sizeof(WCHAR),
+		0,
 		NULL);
 	if (hFileMap == NULL)
 	{
@@ -203,7 +203,7 @@ parse(__in PTCHAR ptFilePath)
 	}
 	//get location on file
 	pvFile = MapViewOfFile(hFileMap,
-		FILE_MAP_WRITE,
+		FILE_MAP_READ,
 		0,
 		0,
 		0);
