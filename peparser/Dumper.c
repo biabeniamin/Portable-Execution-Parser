@@ -46,8 +46,8 @@ void
 dumpExports(__in pParseResult result)
 {
 	_tprintf(TEXT("-----Beginning of Imports-----\n"));
-	_tprintf(TEXT("Count of imports:%d\n"), result->dwSectionslHeaderCount);
-	for (DWORD i = 0; i < result->dwSectionslHeaderCount; i++)
+	_tprintf(TEXT("Count of imports:%d\n"), result->dwImportedEntriesCount);
+	for (DWORD i = 0; i < result->dwImportedEntriesCount; i++)
 	{
 		printf("Name:%s\n", result->importedEntries[i].Name);
 	}
