@@ -26,10 +26,16 @@ typedef struct
 } sectionHeader,*pSectionHeader;
 typedef struct
 {
+	BYTE Name[50];
+} importedEntry,*pImportedEntry;
+typedef struct
+{
 	fileHeader fileHead;
 	optionalHeader optionalHead;
 	DWORD dSectionslHeaderCount;
 	pSectionHeader sectionsHeader;
+	DWORD dImportedEntriesCount;
+	pImportedEntry importedEntries;
 } parseResult,*pParseResult;
 
 #endif // !TYPES

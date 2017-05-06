@@ -5,6 +5,6 @@
 #include "Parser.h"
 int main()
 {
-	parse(TEXT("ff62e5130246500f7b3c39ee74febde8.infected"));
+	parse(TEXT("TestedFiles\\Profile.dll.infected"));
 	
 }
