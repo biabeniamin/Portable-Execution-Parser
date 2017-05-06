@@ -93,11 +93,11 @@ parseDirectoryEntryImport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	//allocate space for entries
 	importedEntries = malloc(sizeof(importedEntry) * 1);
 	//get first import descriptor
-	importDescriptor = (DWORD)imageDosHeader+importDirectory.VirtualAddress;
+	importDescriptor = (DWORD)imageDosHeader+ imageSectionHeader->PointerToRawData +importDirectory.VirtualAddress - imageSectionHeader->VirtualAddress;
 	while (1)
 	{
 		//get pointer to location of import name
-		pcImportName = (PCHAR)(DWORD)imageDosHeader + importDescriptor->Name;
+		pcImportName = (PCHAR)(DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + importDescriptor->Name - imageSectionHeader->VirtualAddress;
 		//save in structure
 		_tcscpy(importedEntries[*lpdwImportedEntriesCount].Name, pcImportName);
 		//get next import entry
@@ -143,11 +143,11 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 		return NULL;
 	}
 	//get first import descriptor
-	imageExportDirectory = (DWORD)imageDosHeader+ exportDirectory.VirtualAddress;
+	imageExportDirectory = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + exportDirectory.VirtualAddress - imageSectionHeader->VirtualAddress;
 	//get beginning of functions info
-	lpdwNamesArray = (DWORD)imageDosHeader + imageExportDirectory->AddressOfNames;
-	lpdwOrdinalArray = (DWORD)imageDosHeader + imageExportDirectory->AddressOfNameOrdinals;
-	lpdwFunctionsArray = (DWORD)imageDosHeader + imageExportDirectory->AddressOfFunctions;
+	lpdwNamesArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfNames - imageSectionHeader->VirtualAddress;
+	lpdwOrdinalArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfNameOrdinals - imageSectionHeader->VirtualAddress;
+	lpdwFunctionsArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfFunctions - imageSectionHeader->VirtualAddress;
 	//set functions count in result
 	*lpdwExportedEntriesCount = imageExportDirectory->NumberOfNames;
 	//allocate space for entries
@@ -173,6 +173,8 @@ parse(__in PTCHAR ptFilePath)
 	IMAGE_DOS_HEADER *dHeader;
 	IMAGE_NT_HEADERS *ntHeader;
 	parseResult result;
+	//set flag as failed,it it finished correctly,it will be set as correctly
+	result.fHasSucceed = 0;
 	//open file
 	hFile = CreateFile(ptFilePath,
 		GENERIC_WRITE | GENERIC_READ,
@@ -181,7 +183,10 @@ parse(__in PTCHAR ptFilePath)
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		_tprintf(TEXT("Cannot open file\n"));
 		goto InvalidFile;
+	}
 	dwFileSize = GetFileSize(hFile,
 		NULL);
 	//map file
@@ -192,7 +197,10 @@ parse(__in PTCHAR ptFilePath)
 		dwFileSize + sizeof(WCHAR),
 		NULL);
 	if (hFileMap == NULL)
+	{
+		_tprintf(TEXT("Cannot map file!\n"));
 		goto FailedMapping;
+	}
 	//get location on file
 	pvFile = MapViewOfFile(hFileMap,
 		FILE_MAP_WRITE,
@@ -200,7 +208,10 @@ parse(__in PTCHAR ptFilePath)
 		0,
 		0);
 	if (pvFile == NULL)
+	{
+		_tprintf(TEXT("Cannot accesed maped file!\n"));
 		goto FailedMapping;
+	}
 	//convert pvoid to image_dos_header
 	dHeader = pvFile;
 	//get image_nt_header based on dos header
@@ -215,6 +226,8 @@ parse(__in PTCHAR ptFilePath)
 	result.importedEntries= parseDirectoryEntryImport(dHeader, ntHeader, &result.dwImportedEntriesCount);
 	//parse export entries
 	result.exportedEntries= parseDirectoryEntryExport(dHeader, ntHeader, &result.dwExportedEntriesCount);
+	//mark as succeed
+	result.fHasSucceed = 1;
 FailedMapping:
 	CloseHandle(hFileMap);
 InvalidFile:

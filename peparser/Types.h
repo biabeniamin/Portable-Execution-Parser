@@ -44,6 +44,7 @@ typedef struct
 	pImportedEntry importedEntries;
 	DWORD dwExportedEntriesCount;
 	pExportedEntry exportedEntries;
+	WORD fHasSucceed;
 } parseResult,*pParseResult;
 
 #endif // !TYPES
