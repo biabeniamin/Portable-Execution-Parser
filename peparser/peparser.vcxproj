@@ -29,8 +29,11 @@
     <ClCompile Include="Parser.c" />
     <ClCompile Include="Source.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Buc.exe" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A9A3E05D-31D0-4BD3-A8BE-735AE901D8DC}</ProjectGuid>
+    <ProjectGuid>{EB425BA3-CB43-4566-AF34-85106826E0DA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>peparser</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>

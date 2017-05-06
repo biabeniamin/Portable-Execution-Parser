@@ -1,6 +1,7 @@
 #include "Parser.h"
 #include "Types.h"
-fileHeader parseFileHeader(IMAGE_NT_HEADERS *imageNtHeader)
+fileHeader 
+parseFileHeader(__in IMAGE_NT_HEADERS *imageNtHeader)
 {
 	fileHeader fHeader;
 	fHeader.Machine = imageNtHeader->FileHeader.Machine;
@@ -8,7 +9,8 @@ fileHeader parseFileHeader(IMAGE_NT_HEADERS *imageNtHeader)
 	fHeader.Characteristics = imageNtHeader->FileHeader.Characteristics;
 	return fHeader;
 }
-optionalHeader parseOptionalHeader(IMAGE_NT_HEADERS *imageNtHeader)
+optionalHeader
+parseOptionalHeader(__in IMAGE_NT_HEADERS *imageNtHeader)
 {
 	optionalHeader oHeader;
 	oHeader.AddressOfEntryPoint = imageNtHeader->OptionalHeader.AddressOfEntryPoint;
@@ -19,15 +21,39 @@ optionalHeader parseOptionalHeader(IMAGE_NT_HEADERS *imageNtHeader)
 	oHeader.NumberOfRvaAndSizes = imageNtHeader->OptionalHeader.NumberOfRvaAndSizes;
 	return oHeader;
 }
-void parseSectionHeader(IMAGE_DOS_HEADER *imageHeader)
+pSectionHeader 
+parseSectionHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
+	__out LPDWORD lpdSectiosHeaderCount)
 {
+	pSectionHeader sectionsHeader;
 	IMAGE_SECTION_HEADER *imageSectionHeader;
-	imageSectionHeader = imageHeader + imageHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS);
-	/*dosHeader = Memory mapped base address
-		ntHeader = (IMAGE_NT_HEADER)((DWORD)dosHeader + dosHeader->e_lfanew)
-		sectionHeader = (IMAGE_SECTION_HEADER)((DWORD)ntHeader + OFFSET(OptionalHeader) + sizeof(OptionalHeader))
-		each section = (char *)((DWORD)dosHeader + sectionHeader.PointerToRawData)*/
-
+	//get section count
+	*lpdSectiosHeaderCount = imageNtHeader->FileHeader.NumberOfSections;
+	//allocate space for data
+	sectionsHeader = malloc(sizeof(sectionHeader)*(*lpdSectiosHeaderCount));
+	//get location of section header,it increment by sizeof(image_nt_header),but you can write +1 because that is how pointer arithmetic works
+	imageSectionHeader = imageNtHeader+1;
+	for (DWORD i = 0; i < *lpdSectiosHeaderCount; i++)
+	{
+		_tcscpy(sectionsHeader[i].Name ,imageSectionHeader->Name);
+		sectionsHeader[i].Address = imageSectionHeader->VirtualAddress;
+		sectionsHeader[i].Size = imageSectionHeader->SizeOfRawData;
+		imageSectionHeader=imageSectionHeader+1;
+	}
+	IMAGE_OPTIONAL_HEADER *pOptionalHeader = &imageNtHeader->OptionalHeader;
+	IMAGE_DATA_DIRECTORY asd = pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+	asd = pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	IMAGE_IMPORT_DESCRIPTOR *asdf = (DWORD)imageDosHeader + asd.VirtualAddress;
+	return sectionsHeader;
+}
+void
+parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
+	__in IMAGE_NT_HEADERS *imageNtHeader)
+{
+	IMAGE_OPTIONAL_HEADER *pOptionalHeader = &imageNtHeader->OptionalHeader;
+	IMAGE_DATA_DIRECTORY asd = pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+	asd = pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	IMAGE_IMPORT_DESCRIPTOR *asdf = (DWORD)imageDosHeader + asd.VirtualAddress;
 }
 void parse(__in PTCHAR ptFilePath)
 {
@@ -70,9 +96,14 @@ void parse(__in PTCHAR ptFilePath)
 	dHeader = pvFile;
 	//get image_nt_header based on dos header
 	ntHeader = (DWORD)dHeader + dHeader->e_lfanew;
+	//parse file header
 	result.fileHead = parseFileHeader(ntHeader);
+	//parse file optional header
 	result.optionalHead = parseOptionalHeader(ntHeader);
-	parseSectionHeader(dHeader);
+	//parse file sections header
+	result.sectionsHeader=parseSectionHeader(ntHeader,&result.dSectionslHeaderCount);
+	//parse export 
+	parseDirectoryEntryExport(dHeader,ntHeader);
 FailedMapping:
 	CloseHandle(hFileMap);
 InvalidFile:

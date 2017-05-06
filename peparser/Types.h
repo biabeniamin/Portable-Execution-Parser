@@ -20,8 +20,16 @@ typedef struct
 }optionalHeader,*pOptionalHeader;
 typedef struct
 {
+	BYTE Name[IMAGE_SIZEOF_SHORT_NAME];
+	DWORD Address;
+	DWORD Size;
+} sectionHeader,*pSectionHeader;
+typedef struct
+{
 	fileHeader fileHead;
 	optionalHeader optionalHead;
+	DWORD dSectionslHeaderCount;
+	pSectionHeader sectionsHeader;
 } parseResult,*pParseResult;
 
 #endif // !TYPES
