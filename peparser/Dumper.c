@@ -4,7 +4,7 @@ dumpFileHeader(__in pParseResult result)
 {
 	_tprintf(TEXT("-----Beginning of File header-----\n"));
 	_tprintf(TEXT("Machine:%0x\n"), result->fileHead.Machine);
-	_tprintf(TEXT("Number of sections:%0x\n"), result->fileHead.NumberOfSections);
+	_tprintf(TEXT("Number of sections:%d\n"), result->fileHead.NumberOfSections);
 	_tprintf(TEXT("Characteristics:%0x\n"), result->fileHead.Characteristics);
 	_tprintf(TEXT("-----Ending of File header-----\n"));
 }
@@ -17,7 +17,7 @@ dumpOptionalHeader(__in pParseResult result)
 	_tprintf(TEXT("Section alignment:%0x\n"), result->optionalHead.SectionAlignment);
 	_tprintf(TEXT("File alignment:%0x\n"), result->optionalHead.FileAlignment);
 	_tprintf(TEXT("Subsysyem:%0x\n"), result->optionalHead.Subsystem);
-	_tprintf(TEXT("Number of Rva and sizes:%0x\n"), result->optionalHead.NumberOfRvaAndSizes);
+	_tprintf(TEXT("Number of Rva and sizes:%d\n"), result->optionalHead.NumberOfRvaAndSizes);
 	_tprintf(TEXT("-----Ending of Optional header-----\n"));
 }
 void
@@ -27,7 +27,7 @@ dumpSections(__in pParseResult result)
 	_tprintf(TEXT("Count of sections:%d\n"), result->dwSectionslHeaderCount);
 	for (DWORD i = 0; i < result->dwSectionslHeaderCount; i++)
 	{
-		printf("Name:%s     Address:%0x     Size:%0x\n", result->sectionsHeader[i].Name, result->sectionsHeader[i].Address, result->sectionsHeader[i].Size);
+		printf("Name:%s     Address:%0x     Size:%d\n", result->sectionsHeader[i].Name, result->sectionsHeader[i].Address, result->sectionsHeader[i].Size);
 	}
 	_tprintf(TEXT("-----Ending of Sections Header-----\n"));
 }
