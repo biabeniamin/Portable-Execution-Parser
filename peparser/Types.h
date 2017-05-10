@@ -36,6 +36,7 @@ typedef struct
 } exportedEntry,*pExportedEntry;
 typedef struct
 {
+	TCHAR tFilePath[MAX_PATH];
 	fileHeader fileHead;
 	optionalHeader optionalHead;
 	DWORD dwSectionslHeaderCount;

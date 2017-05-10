@@ -5,4 +5,6 @@
 #include "Types.h"
 //parse file
 parseResult
-parse(__in TCHAR filePath);
+parse(__in PTCHAR ptfilePath);
+void
+deallocateStructure(__in pParseResult pResult);

@@ -1,5 +1,11 @@
 #include "Parser.h"
+#include<string.h>
 #include "Types.h"
+INT
+ExceptError(INT iErrorCode) 
+{
+	return EXCEPTION_NONCONTINUABLE;
+}
 fileHeader 
 parseFileHeader(__in IMAGE_NT_HEADERS *imageNtHeader)
 {
@@ -27,18 +33,27 @@ parseSectionHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
 {
 	pSectionHeader sectionsHeader;
 	PIMAGE_SECTION_HEADER imageSectionHeader;
-	//get section count
-	*lpdSectiosHeaderCount = imageNtHeader->FileHeader.NumberOfSections;
-	//allocate space for data
-	sectionsHeader = malloc(sizeof(sectionHeader)*(*lpdSectiosHeaderCount));
-	//get location of section header,it increment by sizeof(image_nt_header),but you can write +1 because that is how pointer arithmetic works
-	imageSectionHeader = imageNtHeader+1;
-	for (DWORD i = 0; i < *lpdSectiosHeaderCount; i++)
+	__try
 	{
-		_tcscpy(sectionsHeader[i].Name ,imageSectionHeader->Name);
-		sectionsHeader[i].Address = imageSectionHeader->VirtualAddress;
-		sectionsHeader[i].Size = imageSectionHeader->SizeOfRawData;
-		imageSectionHeader=imageSectionHeader+1;
+		//get section count
+		*lpdSectiosHeaderCount = imageNtHeader->FileHeader.NumberOfSections;
+		//allocate space for data
+		sectionsHeader = malloc(sizeof(sectionHeader)*(*lpdSectiosHeaderCount));
+		//get location of section header,it increment by sizeof(image_nt_header),but you can write +1 because that is how pointer arithmetic works
+		imageSectionHeader = imageNtHeader + 1;
+		for (DWORD i = 0; i < *lpdSectiosHeaderCount; i++)
+		{
+			strncpy(sectionsHeader[i].Name, imageSectionHeader->Name,IMAGE_SIZEOF_SHORT_NAME);
+			sectionsHeader[i].Address = imageSectionHeader->VirtualAddress;
+			sectionsHeader[i].Size = imageSectionHeader->SizeOfRawData;
+			imageSectionHeader = imageSectionHeader + 1;
+		}
+	}
+	__except (ExceptError(GetExceptionCode()))
+	{
+		free(sectionsHeader);
+		sectionsHeader = NULL;
+		*lpdSectiosHeaderCount = -1;
 	}
 	return sectionsHeader;
 }
@@ -78,39 +93,48 @@ parseDirectoryEntryImport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	pImportedEntry importedEntries;
 	//initializing entries count
 	*lpdwImportedEntriesCount = 0;
-	//get optional header
-	pOptionalHeader = &imageNtHeader->OptionalHeader;
-	//get import directory
-	importDirectory = pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
-	//getsection header which owns this directory based on pointer location
-	imageSectionHeader = getPointerSectionHeader(imageNtHeader, importDirectory.VirtualAddress);
-	//if there is no import
-	if (imageSectionHeader == NULL)
+	__try
 	{
-		*lpdwImportedEntriesCount = 0;
-		return NULL;
-	}
-	//allocate space for entries
-	importedEntries = malloc(sizeof(importedEntry) * 1);
-	//get first import descriptor
-	importDescriptor = (DWORD)imageDosHeader+ imageSectionHeader->PointerToRawData +importDirectory.VirtualAddress - imageSectionHeader->VirtualAddress;
-	while (1)
-	{
-		//get pointer to location of import name
-		pcImportName = (PCHAR)(DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + importDescriptor->Name - imageSectionHeader->VirtualAddress;
-		//save in structure
-		_tcscpy(importedEntries[*lpdwImportedEntriesCount].Name, pcImportName);
-		//get next import entry
-		importDescriptor++;
-		//increment count
-		*lpdwImportedEntriesCount= *lpdwImportedEntriesCount+1;
-		//check if we are still on import entry
-		if (getPointerSectionHeader(imageNtHeader, importDescriptor->Name) != imageSectionHeader)
+		//get optional header
+		pOptionalHeader = &imageNtHeader->OptionalHeader;
+		//get import directory
+		importDirectory = pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+		//getsection header which owns this directory based on pointer location
+		imageSectionHeader = getPointerSectionHeader(imageNtHeader, importDirectory.VirtualAddress);
+		//if there is no import
+		if (imageSectionHeader == NULL)
 		{
-			break;
+			*lpdwImportedEntriesCount = 0;
+			return NULL;
 		}
-		//reallocate space for imported entries
-		importedEntries = realloc(importedEntries, sizeof(importedEntry) * (*lpdwImportedEntriesCount + 1));
+		//allocate space for entries
+		importedEntries = malloc(sizeof(importedEntry) * 1);
+		//get first import descriptor
+		importDescriptor = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + importDirectory.VirtualAddress - imageSectionHeader->VirtualAddress;
+		while (1)
+		{
+			//get pointer to location of import name
+			pcImportName = (PCHAR)(DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + importDescriptor->Name - imageSectionHeader->VirtualAddress;
+			//save in structure
+			strncpy(importedEntries[*lpdwImportedEntriesCount].Name, pcImportName, 50);
+			//get next import entry
+			importDescriptor++;
+			//increment count
+			*lpdwImportedEntriesCount = *lpdwImportedEntriesCount + 1;
+			//check if we are still on import entry
+			if (getPointerSectionHeader(imageNtHeader, importDescriptor->Name) != imageSectionHeader)
+			{
+				break;
+			}
+			//reallocate space for imported entries
+			importedEntries = realloc(importedEntries, sizeof(importedEntry) * (*lpdwImportedEntriesCount + 1));
+		}
+	}
+	__except(ExceptError(GetExceptionCode()))
+	{
+		free(importedEntries);
+		importedEntries = NULL;
+		*lpdwImportedEntriesCount = -1;
 	}
 	return importedEntries;
 }
@@ -127,39 +151,48 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	LPDWORD lpdwNamesArray;
 	LPWORD lpdwOrdinalArray;
 	LPDWORD lpdwFunctionsArray;
-	pExportedEntry exportedEntries;
+	pExportedEntry exportedEntries=NULL;
 	//initializing entries count
 	*lpdwExportedEntriesCount = 0;
-	//get optional header
-	pOptionalHeader = &imageNtHeader->OptionalHeader;
-	//get export directory
-	exportDirectory = pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-	//getsection header which owns this directory based on pointer location
-	imageSectionHeader = getPointerSectionHeader(imageNtHeader, exportDirectory.VirtualAddress);
-	//if there is no import
-	if (imageSectionHeader == NULL)
+	__try
 	{
-		*lpdwExportedEntriesCount = 0;
-		return NULL;
+		//get optional header
+		pOptionalHeader = &imageNtHeader->OptionalHeader;
+		//get export directory
+		exportDirectory = pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+		//getsection header which owns this directory based on pointer location
+		imageSectionHeader = getPointerSectionHeader(imageNtHeader, exportDirectory.VirtualAddress);
+		//if there is no import
+		if (imageSectionHeader == NULL)
+		{
+			*lpdwExportedEntriesCount = 0;
+			return NULL;
+		}
+		//get first import descriptor
+		imageExportDirectory = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + exportDirectory.VirtualAddress - imageSectionHeader->VirtualAddress;
+		//get beginning of functions info
+		lpdwNamesArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfNames - imageSectionHeader->VirtualAddress;
+		lpdwOrdinalArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfNameOrdinals - imageSectionHeader->VirtualAddress;
+		lpdwFunctionsArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfFunctions - imageSectionHeader->VirtualAddress;
+		//set functions count in result
+		*lpdwExportedEntriesCount = imageExportDirectory->NumberOfNames;
+		//allocate space for entries
+		exportedEntries = malloc(sizeof(exportedEntry) * imageExportDirectory->NumberOfNames);
+		for (DWORD i = 0; i < imageExportDirectory->NumberOfNames; i++)
+		{
+			//get pointer to location of exported function's name
+			pcExportName = (PCHAR)(DWORD)imageDosHeader + lpdwNamesArray[i];
+			strcpy(exportedEntries[i].Name, pcExportName);
+			LPWORD as = (DWORD)imageDosHeader + lpdwOrdinalArray[i];
+			exportedEntries[i].Ordinal = lpdwOrdinalArray[i];
+			exportedEntries[i].Address = lpdwFunctionsArray[lpdwOrdinalArray[i]];
+		}
 	}
-	//get first import descriptor
-	imageExportDirectory = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + exportDirectory.VirtualAddress - imageSectionHeader->VirtualAddress;
-	//get beginning of functions info
-	lpdwNamesArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfNames - imageSectionHeader->VirtualAddress;
-	lpdwOrdinalArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfNameOrdinals - imageSectionHeader->VirtualAddress;
-	lpdwFunctionsArray = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + imageExportDirectory->AddressOfFunctions - imageSectionHeader->VirtualAddress;
-	//set functions count in result
-	*lpdwExportedEntriesCount = imageExportDirectory->NumberOfNames;
-	//allocate space for entries
-	exportedEntries = malloc(sizeof(exportedEntry) * imageExportDirectory->NumberOfNames);
-	for (DWORD i = 0; i < imageExportDirectory->NumberOfNames; i++)
+	__except (ExceptError(GetExceptionCode()))
 	{
-		//get pointer to location of exported function's name
-		pcExportName = (PCHAR)(DWORD)imageDosHeader + lpdwNamesArray[i];
-		_tcscpy(exportedEntries[i].Name, pcExportName);
-		LPWORD as = (DWORD)imageDosHeader + lpdwOrdinalArray[i];
-		exportedEntries[i].Ordinal = lpdwOrdinalArray[i];
-		exportedEntries[i].Address = lpdwFunctionsArray[lpdwOrdinalArray[i]];
+		free(exportedEntries);
+		exportedEntries = NULL;
+		*lpdwExportedEntriesCount = -1;
 	}
 	return exportedEntries;
 }
@@ -173,12 +206,15 @@ parse(__in PTCHAR ptFilePath)
 	IMAGE_DOS_HEADER *dHeader;
 	IMAGE_NT_HEADERS *ntHeader;
 	parseResult result;
+	//copy file path
+	_tcscpy(result.tFilePath, ptFilePath);
 	//set flag as failed,it it finished correctly,it will be set as correctly
 	result.fHasSucceed = 0;
 	//open file
 	hFile = CreateFile(ptFilePath,
 		GENERIC_READ,
-		0, NULL,
+		0,
+		0,
 		OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);
@@ -187,8 +223,15 @@ parse(__in PTCHAR ptFilePath)
 		_tprintf(TEXT("Cannot open file\n"));
 		goto InvalidFile;
 	}
+	//get file size
 	dwFileSize = GetFileSize(hFile,
 		NULL);
+	//check file size
+	if (dwFileSize == 0)
+	{
+		_tprintf(TEXT("Empty file\n"));
+		goto InvalidFile;
+	}
 	//map file
 	hFileMap = CreateFileMapping(hFile,
 		NULL,
@@ -214,23 +257,49 @@ parse(__in PTCHAR ptFilePath)
 	}
 	//convert pvoid to image_dos_header
 	dHeader = pvFile;
-	//get image_nt_header based on dos header
-	ntHeader = (DWORD)dHeader + dHeader->e_lfanew;
-	//parse file header
-	result.fileHead = parseFileHeader(ntHeader);
-	//parse file optional header
-	result.optionalHead = parseOptionalHeader(ntHeader);
-	//parse file sections header
-	result.sectionsHeader=parseSectionHeader(ntHeader,&result.dwSectionslHeaderCount);
-	//parse import entries 
-	result.importedEntries= parseDirectoryEntryImport(dHeader, ntHeader, &result.dwImportedEntriesCount);
-	//parse export entries
-	result.exportedEntries= parseDirectoryEntryExport(dHeader, ntHeader, &result.dwExportedEntriesCount);
-	//mark as succeed
-	result.fHasSucceed = 1;
+	__try
+	{
+		//get image_nt_header based on dos header
+		ntHeader = (DWORD)dHeader + dHeader->e_lfanew;
+		//parse file header
+		result.fileHead = parseFileHeader(ntHeader);
+		//parse file optional header
+		result.optionalHead = parseOptionalHeader(ntHeader);
+		//parse file sections header
+		result.sectionsHeader = parseSectionHeader(ntHeader, &result.dwSectionslHeaderCount);
+		//parse import entries 
+		result.importedEntries = parseDirectoryEntryImport(dHeader, ntHeader, &result.dwImportedEntriesCount);
+		//parse export entries
+		result.exportedEntries = parseDirectoryEntryExport(dHeader, ntHeader, &result.dwExportedEntriesCount);
+		//mark as succeed
+		result.fHasSucceed = 1;
+	}
+	__finally
+	{
+		//handling closing files after finnaly block
+	}
 FailedMapping:
 	CloseHandle(hFileMap);
 InvalidFile:
 	CloseHandle(hFile);
 	return result;
+}
+void
+deallocateStructure(__in pParseResult pResult)
+{
+	if (pResult->importedEntries != NULL)
+	{
+		free(pResult->importedEntries);
+		pResult->importedEntries = NULL;
+	}
+	if (pResult->exportedEntries != NULL)
+	{
+		free(pResult->exportedEntries);
+		pResult->exportedEntries = NULL;
+	}
+	if (pResult->sectionsHeader != NULL)
+	{
+		free(pResult->sectionsHeader);
+		pResult->sectionsHeader = NULL;
+	}
 }

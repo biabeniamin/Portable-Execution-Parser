@@ -8,3 +8,4 @@ peparser/TestedFiles/
 .vs/peparser/v14/.suo
 peparser/peparser.vcxproj
 peparser/peparser.vcxproj.filters
+PEParser/Tested/
