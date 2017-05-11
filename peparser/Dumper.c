@@ -9,8 +9,6 @@ dumpFileHeader(__in pParseResult result)
 	if (result->fFileHeadReaded == 0)
 	{
 		_tprintf(TEXT("There was an error when trying to read file header!"));
-		int h;
-		_tscanf(TEXT("%d"), &h);
 	}
 	else
 	{
@@ -28,9 +26,7 @@ dumpOptionalHeader(__in pParseResult result)
 	_tprintf(TEXT("--------------------------------------\n"));
 	if (result->fOptionalHeadReaded== 0)
 	{
-		_tprintf(TEXT("There was an error when trying to read optional file header!"));
-		int h;
-		_tscanf(TEXT("%d"), &h);
+		_tprintf(TEXT("There was an error when trying to read optional file header!"));		
 	}
 	else
 	{
@@ -53,6 +49,8 @@ dumpSections(__in pParseResult result)
 	if (result->dwSectionslHeaderCount == 0 || result->sectionsHeader == NULL)
 	{
 		_tprintf(TEXT("There was a problem when trying to read sections!\n"));
+		int h;
+		_tscanf(TEXT("%d"), &h);
 	}
 	else
 	{

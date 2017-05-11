@@ -44,8 +44,8 @@ void test()
 			if (result.fHasSucceed)
 				dumpResult(&result);
 			deallocateStructure(&result);
-			//if (++count == 100)
-				//break;
+			if (++count == -1)
+				break;
 		}
 	} while (FindNextFile(hFind, &ffd) != 0);
 	
@@ -53,10 +53,10 @@ void test()
 int main()
 {
 	TCHAR filePath[MAX_PATH];
-	_tcscpy(filePath, TEXT("Tested\\ea617f4f0be16711affc39b5dc7db074.infected"));
+	_tcscpy(filePath, TEXT("Tested\\0bce837a2c2f91198a3aa61d47db888f.infected"));
 	_tprintf(TEXT("File path of file which will be analyzed:"));
 	//_tcscanf(TEXT("%s"), filePath);
-	//test();
+	test();
 	if (_tcslen(filePath) < 1)
 	{
 		_tprintf(TEXT("Invalid file path!\n"));

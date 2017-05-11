@@ -139,7 +139,7 @@ parseDirectoryEntryImport(__in IMAGE_DOS_HEADER *imageDosHeader,
 		while (1)
 		{
 			//get pointer to location of import name
-			pcImportName = (PCHAR)(DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + importDescriptor->Name - imageSectionHeader->VirtualAddress;
+			pcImportName = (PCHAR)((DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + importDescriptor->Name - imageSectionHeader->VirtualAddress);
 			//save in structure
 			strncpy(importedEntries[*lpdwImportedEntriesCount].Name, pcImportName, 50);
 			//get next import entry
@@ -206,9 +206,9 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 		for (DWORD i = 0; i < imageExportDirectory->NumberOfNames; i++)
 		{
 			//get pointer to location of exported function's name
-			pcExportName = (PCHAR)(DWORD)imageDosHeader + lpdwNamesArray[i];
+			pcExportName = (PCHAR)(DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + lpdwNamesArray[i]-imageSectionHeader->VirtualAddress;
 			strncpy(exportedEntries[i].Name, pcExportName,50);
-			LPWORD as = (DWORD)imageDosHeader + lpdwOrdinalArray[i];
+			LPWORD as = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + lpdwOrdinalArray[i] - imageSectionHeader->VirtualAddress;
 			exportedEntries[i].Ordinal = lpdwOrdinalArray[i];
 			exportedEntries[i].Address = lpdwFunctionsArray[lpdwOrdinalArray[i]];
 		}
