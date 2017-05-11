@@ -3,30 +3,54 @@ void
 dumpFileHeader(__in pParseResult result)
 {
 	_tprintf(TEXT("Result for %s file\n"), result->tFilePath);
+	_tprintf(TEXT("----------------------------------\n"));
 	_tprintf(TEXT("-----Beginning of File header-----\n"));
-	_tprintf(TEXT("Machine:%0x\n"), result->fileHead.Machine);
-	_tprintf(TEXT("Number of sections:%d\n"), result->fileHead.NumberOfSections);
-	_tprintf(TEXT("Characteristics:%0x\n"), result->fileHead.Characteristics);
-	_tprintf(TEXT("-----Ending of File header-----\n"));
+	_tprintf(TEXT("----------------------------------\n"));
+	if (result->fFileHeadReaded == 0)
+	{
+		_tprintf(TEXT("There was an error when trying to read file header!"));
+		int h;
+		_tscanf(TEXT("%d"), &h);
+	}
+	else
+	{
+		_tprintf(TEXT("Machine:0x%0x\n"), result->fileHead.Machine);
+		_tprintf(TEXT("Number of sections:%d\n"), result->fileHead.NumberOfSections);
+		_tprintf(TEXT("Characteristics:0x%0x\n"), result->fileHead.Characteristics);
+	}
+	_tprintf(TEXT("-----Ending of File header-----\n\n"));
 }
 void
 dumpOptionalHeader(__in pParseResult result)
 {
+	_tprintf(TEXT("--------------------------------------\n"));
 	_tprintf(TEXT("-----Beginning of Optional header-----\n"));
-	_tprintf(TEXT("Address of entry point:%0x\n"), result->optionalHead.AddressOfEntryPoint);
-	_tprintf(TEXT("Image base:%0x\n"), result->optionalHead.ImageBase);
-	_tprintf(TEXT("Section alignment:%0x\n"), result->optionalHead.SectionAlignment);
-	_tprintf(TEXT("File alignment:%0x\n"), result->optionalHead.FileAlignment);
-	_tprintf(TEXT("Subsysyem:%0x\n"), result->optionalHead.Subsystem);
-	_tprintf(TEXT("Number of Rva and sizes:%d\n"), result->optionalHead.NumberOfRvaAndSizes);
-	_tprintf(TEXT("-----Ending of Optional header-----\n"));
+	_tprintf(TEXT("--------------------------------------\n"));
+	if (result->fOptionalHeadReaded== 0)
+	{
+		_tprintf(TEXT("There was an error when trying to read optional file header!"));
+		int h;
+		_tscanf(TEXT("%d"), &h);
+	}
+	else
+	{
+		_tprintf(TEXT("Address of entry point:ox%0x\n"), result->optionalHead.AddressOfEntryPoint);
+		_tprintf(TEXT("Image base:0x%0x\n"), result->optionalHead.ImageBase);
+		_tprintf(TEXT("Section alignment:0x%0x\n"), result->optionalHead.SectionAlignment);
+		_tprintf(TEXT("File alignment:0x%0x\n"), result->optionalHead.FileAlignment);
+		_tprintf(TEXT("Subsysyem:0x%0x\n"), result->optionalHead.Subsystem);
+		_tprintf(TEXT("Number of Rva and sizes:%d\n"), result->optionalHead.NumberOfRvaAndSizes);
+	}
+	_tprintf(TEXT("-----Ending of Optional header-----\n\n"));
 }
 void
 dumpSections(__in pParseResult result)
 {
+	_tprintf(TEXT("----------------------------------    \n"));
 	_tprintf(TEXT("-----Beginning of Sections Header-----\n"));
+	_tprintf(TEXT("----------------------------------    \n"));
 	_tprintf(TEXT("Count of sections:%d\n"), result->dwSectionslHeaderCount);
-	if (result->dwSectionslHeaderCount == -1 || result->sectionsHeader == NULL)
+	if (result->dwSectionslHeaderCount == 0 || result->sectionsHeader == NULL)
 	{
 		_tprintf(TEXT("There was a problem when trying to read sections!\n"));
 	}
@@ -34,17 +58,21 @@ dumpSections(__in pParseResult result)
 	{
 		for (DWORD i = 0; i < result->dwSectionslHeaderCount; i++)
 		{
-			printf("Name:%s     Address:%0x     Size:%d\n", result->sectionsHeader[i].Name, result->sectionsHeader[i].Address, result->sectionsHeader[i].Size);
+			printf("Name:%s\t", result->sectionsHeader[i].Name);
+			_tprintf(TEXT("Address:0x%0x\t"), result->sectionsHeader[i].Address);
+			_tprintf(TEXT("Size:%d\n"), result->sectionsHeader[i].Size);
 		}
 	}
-	_tprintf(TEXT("-----Ending of Sections Header-----\n"));
+	_tprintf(TEXT("-----Ending of Sections Header-----\n\n"));
 }
 void
 dumpExports(__in pParseResult result)
 {
+	_tprintf(TEXT("------------------------------\n"));
 	_tprintf(TEXT("-----Beginning of Exports-----\n"));
+	_tprintf(TEXT("------------------------------\n"));
 	_tprintf(TEXT("Count of exports:%d\n"), result->dwExportedEntriesCount);
-	if (result->dwExportedEntriesCount == -1 || (result->exportedEntries == NULL && result->dwExportedEntriesCount!=0))
+	if (result->dwExportedEntriesCount == 0 || (result->exportedEntries == NULL && result->dwExportedEntriesCount!=0))
 	{
 		_tprintf(TEXT("There was a problem when trying to read exports!\n"));
 	}
@@ -52,17 +80,21 @@ dumpExports(__in pParseResult result)
 	{
 		for (DWORD i = 0; i < result->dwExportedEntriesCount; i++)
 		{
-			printf("Name:%s     Ordinal:%0x     Address:%0x\n", result->exportedEntries[i].Name, result->exportedEntries[i].Ordinal, result->exportedEntries[i].Address);
+			printf("Name:%s\t", result->exportedEntries[i].Name);
+			_tprintf(TEXT("Ordinal:0x%0x\t"), result->exportedEntries[i].Ordinal);
+			_tprintf(TEXT("Address:0x%0x\n"), result->exportedEntries[i].Address);
 		}
 	}
-	_tprintf(TEXT("-----Ending of Exports-----\n"));
+	_tprintf(TEXT("-----Ending of Exports-----\n\n"));
 }
 void
 dumpImports(__in pParseResult result)
 {
+	_tprintf(TEXT("------------------------------\n"));
 	_tprintf(TEXT("-----Beginning of Imports-----\n"));
+	_tprintf(TEXT("------------------------------\n"));
 	_tprintf(TEXT("Count of imports:%d\n"), result->dwImportedEntriesCount);
-	if (result->dwImportedEntriesCount == -1 || result->importedEntries == NULL)
+	if (result->dwImportedEntriesCount == 0 || result->importedEntries == NULL)
 	{
 		_tprintf(TEXT("There was a problem when trying to read imports!\n"));
 	}
@@ -73,14 +105,21 @@ dumpImports(__in pParseResult result)
 			printf("Name:%s\n", result->importedEntries[i].Name);
 		}
 	}
-	_tprintf(TEXT("-----Ending of Imports-----\n"));
+	_tprintf(TEXT("-----Ending of Imports-----\n\n"));
 }
 void
 dumpResult(__in pParseResult result)
 {
-	dumpFileHeader(result);
-	dumpOptionalHeader(result);
-	dumpSections(result);
-	dumpImports(result);
-	dumpExports(result);
+	if (result->fHasSucceed)
+	{
+		dumpFileHeader(result);
+		dumpOptionalHeader(result);
+		dumpSections(result);
+		dumpImports(result);
+		dumpExports(result);
+	}
+	else
+	{
+		_tprintf(TEXT("There was a problem when trying to parse %s file\n"), result->tFilePath);
+	}
 }

@@ -7,31 +7,56 @@ ExceptError(INT iErrorCode)
 	return EXCEPTION_NONCONTINUABLE;
 }
 fileHeader 
-parseFileHeader(__in IMAGE_NT_HEADERS *imageNtHeader)
+parseFileHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
+	__out PINT fFileHeaderReader)
 {
-	fileHeader fHeader;
-	fHeader.Machine = imageNtHeader->FileHeader.Machine;
-	fHeader.NumberOfSections = imageNtHeader->FileHeader.NumberOfSections;
-	fHeader.Characteristics = imageNtHeader->FileHeader.Characteristics;
+	fileHeader fHeader = {.Machine=0,.NumberOfSections=0,.Characteristics=0};
+	*fFileHeaderReader = 0;
+	__try
+	{
+		fHeader.Machine = imageNtHeader->FileHeader.Machine;
+		fHeader.NumberOfSections = imageNtHeader->FileHeader.NumberOfSections;
+		fHeader.Characteristics = imageNtHeader->FileHeader.Characteristics;
+		*fFileHeaderReader = 1;
+	}
+	__except (ExceptError(GetExceptionCode()))
+	{
+		*fFileHeaderReader = 0;
+	}
 	return fHeader;
 }
 optionalHeader
-parseOptionalHeader(__in IMAGE_NT_HEADERS *imageNtHeader)
+parseOptionalHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
+	__out PINT fFileOptionalHeaderReader)
 {
-	optionalHeader oHeader;
-	oHeader.AddressOfEntryPoint = imageNtHeader->OptionalHeader.AddressOfEntryPoint;
-	oHeader.ImageBase = imageNtHeader->OptionalHeader.ImageBase;
-	oHeader.SectionAlignment = imageNtHeader->OptionalHeader.SectionAlignment;
-	oHeader.FileAlignment = imageNtHeader->OptionalHeader.FileAlignment;
-	oHeader.Subsystem = imageNtHeader->OptionalHeader.Subsystem;
-	oHeader.NumberOfRvaAndSizes = imageNtHeader->OptionalHeader.NumberOfRvaAndSizes;
+	optionalHeader oHeader = { .AddressOfEntryPoint=0,
+		.ImageBase=0,
+		.SectionAlignment = 0,
+		.FileAlignment = 0,
+		.Subsystem = 0,
+		.NumberOfRvaAndSizes = 0 };
+	*fFileOptionalHeaderReader = 0;
+	__try
+	{
+		oHeader.AddressOfEntryPoint = imageNtHeader->OptionalHeader.AddressOfEntryPoint;
+		oHeader.ImageBase = imageNtHeader->OptionalHeader.ImageBase;
+		oHeader.SectionAlignment = imageNtHeader->OptionalHeader.SectionAlignment;
+		oHeader.FileAlignment = imageNtHeader->OptionalHeader.FileAlignment;
+		oHeader.Subsystem = imageNtHeader->OptionalHeader.Subsystem;
+		oHeader.NumberOfRvaAndSizes = imageNtHeader->OptionalHeader.NumberOfRvaAndSizes;
+		*fFileOptionalHeaderReader = 1;
+	}
+	__except (ExceptError(GetExceptionCode()))
+	{
+		*fFileOptionalHeaderReader = 0;
+	}
 	return oHeader;
 }
 pSectionHeader 
 parseSectionHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
 	__out LPDWORD lpdSectiosHeaderCount)
 {
-	pSectionHeader sectionsHeader;
+	pSectionHeader sectionsHeader=NULL;
 	PIMAGE_SECTION_HEADER imageSectionHeader;
 	__try
 	{
@@ -53,7 +78,7 @@ parseSectionHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
 	{
 		free(sectionsHeader);
 		sectionsHeader = NULL;
-		*lpdSectiosHeaderCount = -1;
+		*lpdSectiosHeaderCount = 0;
 	}
 	return sectionsHeader;
 }
@@ -90,7 +115,7 @@ parseDirectoryEntryImport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	IMAGE_DATA_DIRECTORY importDirectory;
 	PIMAGE_IMPORT_DESCRIPTOR importDescriptor;
 	PCHAR pcImportName;
-	pImportedEntry importedEntries;
+	pImportedEntry importedEntries=NULL;
 	//initializing entries count
 	*lpdwImportedEntriesCount = 0;
 	__try
@@ -134,7 +159,7 @@ parseDirectoryEntryImport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	{
 		free(importedEntries);
 		importedEntries = NULL;
-		*lpdwImportedEntriesCount = -1;
+		*lpdwImportedEntriesCount =0;
 	}
 	return importedEntries;
 }
@@ -182,7 +207,7 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 		{
 			//get pointer to location of exported function's name
 			pcExportName = (PCHAR)(DWORD)imageDosHeader + lpdwNamesArray[i];
-			strcpy(exportedEntries[i].Name, pcExportName);
+			strncpy(exportedEntries[i].Name, pcExportName,50);
 			LPWORD as = (DWORD)imageDosHeader + lpdwOrdinalArray[i];
 			exportedEntries[i].Ordinal = lpdwOrdinalArray[i];
 			exportedEntries[i].Address = lpdwFunctionsArray[lpdwOrdinalArray[i]];
@@ -192,9 +217,19 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	{
 		free(exportedEntries);
 		exportedEntries = NULL;
-		*lpdwExportedEntriesCount = -1;
+		*lpdwExportedEntriesCount = 0;
 	}
 	return exportedEntries;
+}
+void
+initializingParseResult(__out pParseResult pResult)
+{
+	pResult->dwExportedEntriesCount = 0;
+	pResult->dwImportedEntriesCount = 0;
+	pResult->dwSectionslHeaderCount = 0;
+	pResult->importedEntries = NULL;
+	pResult->exportedEntries = NULL;
+	pResult->sectionsHeader = NULL;
 }
 parseResult
 parse(__in PTCHAR ptFilePath)
@@ -206,6 +241,8 @@ parse(__in PTCHAR ptFilePath)
 	IMAGE_DOS_HEADER *dHeader;
 	IMAGE_NT_HEADERS *ntHeader;
 	parseResult result;
+	//initialize result
+	initializingParseResult(&result);
 	//copy file path
 	_tcscpy(result.tFilePath, ptFilePath);
 	//set flag as failed,it it finished correctly,it will be set as correctly
@@ -262,9 +299,9 @@ parse(__in PTCHAR ptFilePath)
 		//get image_nt_header based on dos header
 		ntHeader = (DWORD)dHeader + dHeader->e_lfanew;
 		//parse file header
-		result.fileHead = parseFileHeader(ntHeader);
+		result.fileHead = parseFileHeader(ntHeader,&result.fFileHeadReaded);
 		//parse file optional header
-		result.optionalHead = parseOptionalHeader(ntHeader);
+		result.optionalHead = parseOptionalHeader(ntHeader,&result.fOptionalHeadReaded);
 		//parse file sections header
 		result.sectionsHeader = parseSectionHeader(ntHeader, &result.dwSectionslHeaderCount);
 		//parse import entries 
@@ -287,17 +324,20 @@ InvalidFile:
 void
 deallocateStructure(__in pParseResult pResult)
 {
-	if (pResult->importedEntries != NULL)
+	//check if iw was allocated
+	if (pResult->importedEntries != NULL && pResult->dwImportedEntriesCount>0)
 	{
 		free(pResult->importedEntries);
 		pResult->importedEntries = NULL;
 	}
-	if (pResult->exportedEntries != NULL)
+	//check if iw was allocated
+	if (pResult->exportedEntries != NULL && pResult->dwExportedEntriesCount>0)
 	{
 		free(pResult->exportedEntries);
 		pResult->exportedEntries = NULL;
 	}
-	if (pResult->sectionsHeader != NULL)
+	//check if iw was allocated
+	if (pResult->sectionsHeader != NULL && pResult->dwSectionslHeaderCount>0)
 	{
 		free(pResult->sectionsHeader);
 		pResult->sectionsHeader = NULL;

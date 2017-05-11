@@ -44,8 +44,8 @@ void test()
 			if (result.fHasSucceed)
 				dumpResult(&result);
 			deallocateStructure(&result);
-			if (++count == 5)
-				break;
+			//if (++count == 100)
+				//break;
 		}
 	} while (FindNextFile(hFind, &ffd) != 0);
 	
@@ -53,18 +53,17 @@ void test()
 int main()
 {
 	TCHAR filePath[MAX_PATH];
-	_tcscpy(filePath, TEXT("ConsoleApplication3.exe"));
+	_tcscpy(filePath, TEXT("Tested\\ea617f4f0be16711affc39b5dc7db074.infected"));
 	_tprintf(TEXT("File path of file which will be analyzed:"));
 	//_tcscanf(TEXT("%s"), filePath);
-	test();
+	//test();
 	if (_tcslen(filePath) < 1)
 	{
 		_tprintf(TEXT("Invalid file path!\n"));
 		return;
 	}
 	parseResult result = parse(filePath);
-	if(result.fHasSucceed)
-		dumpResult(&result);
+	dumpResult(&result);
 	deallocateStructure(&result);
 	
 }

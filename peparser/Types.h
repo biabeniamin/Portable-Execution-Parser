@@ -37,14 +37,26 @@ typedef struct
 typedef struct
 {
 	TCHAR tFilePath[MAX_PATH];
+	//owns file header information
 	fileHeader fileHead;
+	//is 1 if it readed succesfully
+	INT fFileHeadReaded;
+	//owns optional header informations
 	optionalHeader optionalHead;
+	//is 1 if it readed succesfully
+	INT fOptionalHeadReaded;
+	//counter is -1 if failed
 	DWORD dwSectionslHeaderCount;
 	pSectionHeader sectionsHeader;
+	//counter is -1 if failed
 	DWORD dwImportedEntriesCount;
+	//owns imported entries
 	pImportedEntry importedEntries;
+	//counter is -1 if failed
 	DWORD dwExportedEntriesCount;
+	//owns exported entries
 	pExportedEntry exportedEntries;
+	//is 1 if there wasn't any problem which wasn't handled
 	WORD fHasSucceed;
 } parseResult,*pParseResult;
 
