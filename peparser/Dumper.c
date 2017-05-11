@@ -46,11 +46,9 @@ dumpSections(__in pParseResult result)
 	_tprintf(TEXT("-----Beginning of Sections Header-----\n"));
 	_tprintf(TEXT("----------------------------------    \n"));
 	_tprintf(TEXT("Count of sections:%d\n"), result->dwSectionslHeaderCount);
-	if (result->dwSectionslHeaderCount == 0 || result->sectionsHeader == NULL)
+	if (result->dwSectionslHeaderCount == PARSE_ERROR|| result->sectionsHeader == NULL)
 	{
 		_tprintf(TEXT("There was a problem when trying to read sections!\n"));
-		int h;
-		_tscanf(TEXT("%d"), &h);
 	}
 	else
 	{
@@ -70,9 +68,14 @@ dumpExports(__in pParseResult result)
 	_tprintf(TEXT("-----Beginning of Exports-----\n"));
 	_tprintf(TEXT("------------------------------\n"));
 	_tprintf(TEXT("Count of exports:%d\n"), result->dwExportedEntriesCount);
-	if (result->dwExportedEntriesCount == 0 || (result->exportedEntries == NULL && result->dwExportedEntriesCount!=0))
+	if (result->dwExportedEntriesCount == PARSE_ERROR || (result->exportedEntries == NULL && result->dwExportedEntriesCount!=0))
 	{
 		_tprintf(TEXT("There was a problem when trying to read exports!\n"));
+		if (result->exportedEntries == NULL)
+		{
+			int h;
+			_tscanf(TEXT("%d"), &h);
+		}
 	}
 	else
 	{
@@ -92,7 +95,7 @@ dumpImports(__in pParseResult result)
 	_tprintf(TEXT("-----Beginning of Imports-----\n"));
 	_tprintf(TEXT("------------------------------\n"));
 	_tprintf(TEXT("Count of imports:%d\n"), result->dwImportedEntriesCount);
-	if (result->dwImportedEntriesCount == 0 || result->importedEntries == NULL)
+	if (result->dwImportedEntriesCount == PARSE_ERROR || result->importedEntries == NULL)
 	{
 		_tprintf(TEXT("There was a problem when trying to read imports!\n"));
 	}

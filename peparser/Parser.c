@@ -78,7 +78,7 @@ parseSectionHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
 	{
 		free(sectionsHeader);
 		sectionsHeader = NULL;
-		*lpdSectiosHeaderCount = 0;
+		*lpdSectiosHeaderCount = PARSE_ERROR;
 	}
 	return sectionsHeader;
 }
@@ -159,7 +159,7 @@ parseDirectoryEntryImport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	{
 		free(importedEntries);
 		importedEntries = NULL;
-		*lpdwImportedEntriesCount =0;
+		*lpdwImportedEntriesCount = PARSE_ERROR;
 	}
 	return importedEntries;
 }
@@ -217,19 +217,21 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	{
 		free(exportedEntries);
 		exportedEntries = NULL;
-		*lpdwExportedEntriesCount = 0;
+		*lpdwExportedEntriesCount = PARSE_ERROR;
 	}
 	return exportedEntries;
 }
 void
 initializingParseResult(__out pParseResult pResult)
 {
-	pResult->dwExportedEntriesCount = 0;
-	pResult->dwImportedEntriesCount = 0;
-	pResult->dwSectionslHeaderCount = 0;
+	pResult->dwExportedEntriesCount = PARSE_ERROR;
+	pResult->dwImportedEntriesCount = PARSE_ERROR;
+	pResult->dwSectionslHeaderCount = PARSE_ERROR;
 	pResult->importedEntries = NULL;
 	pResult->exportedEntries = NULL;
 	pResult->sectionsHeader = NULL;
+	//set flag as failed,it it finished correctly,it will be set as correctly
+	pResult->fHasSucceed = 0;
 }
 parseResult
 parse(__in PTCHAR ptFilePath)
@@ -245,8 +247,6 @@ parse(__in PTCHAR ptFilePath)
 	initializingParseResult(&result);
 	//copy file path
 	_tcscpy(result.tFilePath, ptFilePath);
-	//set flag as failed,it it finished correctly,it will be set as correctly
-	result.fHasSucceed = 0;
 	//open file
 	hFile = CreateFile(ptFilePath,
 		GENERIC_READ,
@@ -325,19 +325,19 @@ void
 deallocateStructure(__in pParseResult pResult)
 {
 	//check if iw was allocated
-	if (pResult->importedEntries != NULL && pResult->dwImportedEntriesCount>0)
+	if (pResult->importedEntries != NULL && pResult->dwImportedEntriesCount<PARSE_ERROR)
 	{
 		free(pResult->importedEntries);
 		pResult->importedEntries = NULL;
 	}
 	//check if iw was allocated
-	if (pResult->exportedEntries != NULL && pResult->dwExportedEntriesCount>0)
+	if (pResult->exportedEntries != NULL && pResult->dwExportedEntriesCount<PARSE_ERROR)
 	{
 		free(pResult->exportedEntries);
 		pResult->exportedEntries = NULL;
 	}
 	//check if iw was allocated
-	if (pResult->sectionsHeader != NULL && pResult->dwSectionslHeaderCount>0)
+	if (pResult->sectionsHeader != NULL && pResult->dwSectionslHeaderCount<PARSE_ERROR)
 	{
 		free(pResult->sectionsHeader);
 		pResult->sectionsHeader = NULL;

@@ -3,6 +3,7 @@
 #include<tchar.h>
 #ifndef TYPES
 #define TYPES
+#define PARSE_ERROR 0xFFFFFFFF 
 typedef struct
 {
 	DWORD Machine;
@@ -45,14 +46,14 @@ typedef struct
 	optionalHeader optionalHead;
 	//is 1 if it readed succesfully
 	INT fOptionalHeadReaded;
-	//counter is -1 if failed
+	//counter is PARSE_ERROr if failed
 	DWORD dwSectionslHeaderCount;
 	pSectionHeader sectionsHeader;
-	//counter is -1 if failed
+	//counter is PARSE_ERROR if failed
 	DWORD dwImportedEntriesCount;
 	//owns imported entries
 	pImportedEntry importedEntries;
-	//counter is -1 if failed
+	//counter is PARSE_ERROR if failed
 	DWORD dwExportedEntriesCount;
 	//owns exported entries
 	pExportedEntry exportedEntries;
