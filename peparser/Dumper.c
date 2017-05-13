@@ -1,5 +1,34 @@
 #include "Dumper.h"
 void
+dumpMachineCode(__in DWORD dwMachine)
+{
+	_tprintf(TEXT("Machine:0x%0x\t"), dwMachine);
+	switch (dwMachine)
+	{
+	case 0x14d:
+		_tprintf(TEXT("Intel i860"));
+		break;
+	case 0x14c:
+		_tprintf(TEXT("Intel i386 or higher"));
+		break;
+	case 0x162:
+		_tprintf(TEXT("MIPS R3000"));
+		break;
+	case 0x166:
+		_tprintf(TEXT("MIPS R4000"));
+		break;
+	case 0x183:
+		_tprintf(TEXT("DEC Alpha AXP"));
+		break;
+	}
+	_tprintf(TEXT("\n"));
+}
+void
+dumpCharacteristics(__in WORD wCharacteristics)
+{
+	_tprintf(TEXT("Characteristics:0x%0x\n"), wCharacteristics);
+}
+void
 dumpFileHeader(__in pParseResult result)
 {
 	_tprintf(TEXT("Result for %s file\n"), result->tFilePath);
@@ -12,9 +41,9 @@ dumpFileHeader(__in pParseResult result)
 	}
 	else
 	{
-		_tprintf(TEXT("Machine:0x%0x\n"), result->fileHead.Machine);
+		dumpMachineCode(result->fileHead.Machine);
 		_tprintf(TEXT("Number of sections:%d\n"), result->fileHead.NumberOfSections);
-		_tprintf(TEXT("Characteristics:0x%0x\n"), result->fileHead.Characteristics);
+		dumpCharacteristics(result->fileHead.Characteristics);
 	}
 	_tprintf(TEXT("-----Ending of File header-----\n\n"));
 }
