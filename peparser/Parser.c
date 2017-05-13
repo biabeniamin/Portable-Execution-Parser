@@ -10,44 +10,56 @@ fileHeader
 parseFileHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
 	__out PINT fFileHeaderReader)
 {
+	//initializing header
 	fileHeader fHeader = {.Machine=0,.NumberOfSections=0,.Characteristics=0};
 	*fFileHeaderReader = 0;
+	//try to read
 	__try
 	{
+		//copy date in new structure
 		fHeader.Machine = imageNtHeader->FileHeader.Machine;
 		fHeader.NumberOfSections = imageNtHeader->FileHeader.NumberOfSections;
 		fHeader.Characteristics = imageNtHeader->FileHeader.Characteristics;
+		//mark as readed
 		*fFileHeaderReader = 1;
 	}
 	__except (ExceptError(GetExceptionCode()))
 	{
+		//mark as failed
 		*fFileHeaderReader = 0;
 	}
+	//return result
 	return fHeader;
 }
 optionalHeader
 parseOptionalHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
 	__out PINT fFileOptionalHeaderReader)
 {
+	//initializing result
 	optionalHeader oHeader = { .AddressOfEntryPoint=0,
 		.ImageBase=0,
 		.SectionAlignment = 0,
 		.FileAlignment = 0,
 		.Subsystem = 0,
 		.NumberOfRvaAndSizes = 0 };
+	//mark as failed
 	*fFileOptionalHeaderReader = 0;
+	//try to read data
 	__try
 	{
+		//copy daya
 		oHeader.AddressOfEntryPoint = imageNtHeader->OptionalHeader.AddressOfEntryPoint;
 		oHeader.ImageBase = imageNtHeader->OptionalHeader.ImageBase;
 		oHeader.SectionAlignment = imageNtHeader->OptionalHeader.SectionAlignment;
 		oHeader.FileAlignment = imageNtHeader->OptionalHeader.FileAlignment;
 		oHeader.Subsystem = imageNtHeader->OptionalHeader.Subsystem;
 		oHeader.NumberOfRvaAndSizes = imageNtHeader->OptionalHeader.NumberOfRvaAndSizes;
+		//mark as succesfull
 		*fFileOptionalHeaderReader = 1;
 	}
 	__except (ExceptError(GetExceptionCode()))
 	{
+		//mark as failed
 		*fFileOptionalHeaderReader = 0;
 	}
 	return oHeader;
@@ -68,6 +80,7 @@ parseSectionHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
 		imageSectionHeader = imageNtHeader + 1;
 		for (DWORD i = 0; i < *lpdSectiosHeaderCount; i++)
 		{
+			//copy data
 			strncpy(sectionsHeader[i].Name, imageSectionHeader->Name,IMAGE_SIZEOF_SHORT_NAME);
 			sectionsHeader[i].Address = imageSectionHeader->VirtualAddress;
 			sectionsHeader[i].Size = imageSectionHeader->SizeOfRawData;
@@ -76,8 +89,12 @@ parseSectionHeader(__in IMAGE_NT_HEADERS *imageNtHeader,
 	}
 	__except (ExceptError(GetExceptionCode()))
 	{
+		//handle exception
+		//deallocate memory
 		free(sectionsHeader);
+		//mark as null
 		sectionsHeader = NULL;
+		//set as error
 		*lpdSectiosHeaderCount = PARSE_ERROR;
 	}
 	return sectionsHeader;
@@ -129,6 +146,7 @@ parseDirectoryEntryImport(__in IMAGE_DOS_HEADER *imageDosHeader,
 		//if there is no import
 		if (imageSectionHeader == NULL)
 		{
+			//set count to 0
 			*lpdwImportedEntriesCount = 0;
 			return NULL;
 		}
@@ -157,8 +175,11 @@ parseDirectoryEntryImport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	}
 	__except(ExceptError(GetExceptionCode()))
 	{
+		//deallocate memory
 		free(importedEntries);
+		//set to null
 		importedEntries = NULL;
+		//mark as failed
 		*lpdwImportedEntriesCount = PARSE_ERROR;
 	}
 	return importedEntries;
@@ -190,6 +211,7 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 		//if there is no import
 		if (imageSectionHeader == NULL)
 		{
+			//set count to 0
 			*lpdwExportedEntriesCount = 0;
 			return NULL;
 		}
@@ -207,6 +229,7 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 		{
 			//get pointer to location of exported function's name
 			pcExportName = (PCHAR)(DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + lpdwNamesArray[i]-imageSectionHeader->VirtualAddress;
+			//copy data
 			strncpy(exportedEntries[i].Name, pcExportName,50);
 			LPWORD as = (DWORD)imageDosHeader + imageSectionHeader->PointerToRawData + lpdwOrdinalArray[i] - imageSectionHeader->VirtualAddress;
 			exportedEntries[i].Ordinal = lpdwOrdinalArray[i];
@@ -215,8 +238,11 @@ parseDirectoryEntryExport(__in IMAGE_DOS_HEADER *imageDosHeader,
 	}
 	__except (ExceptError(GetExceptionCode()))
 	{
+		//deallocate memory
 		free(exportedEntries);
+		//set to null
 		exportedEntries = NULL;
+		//mark as failed
 		*lpdwExportedEntriesCount = PARSE_ERROR;
 	}
 	return exportedEntries;
@@ -327,19 +353,25 @@ deallocateStructure(__in pParseResult pResult)
 	//check if iw was allocated
 	if (pResult->importedEntries != NULL && pResult->dwImportedEntriesCount<PARSE_ERROR)
 	{
+		//deallocate memory
 		free(pResult->importedEntries);
+		//set to null
 		pResult->importedEntries = NULL;
 	}
 	//check if iw was allocated
 	if (pResult->exportedEntries != NULL && pResult->dwExportedEntriesCount<PARSE_ERROR)
 	{
+		//deallocate memory
 		free(pResult->exportedEntries);
+		//set to null
 		pResult->exportedEntries = NULL;
 	}
 	//check if iw was allocated
 	if (pResult->sectionsHeader != NULL && pResult->dwSectionslHeaderCount<PARSE_ERROR)
 	{
+		//deallocate memory
 		free(pResult->sectionsHeader);
+		//set to null
 		pResult->sectionsHeader = NULL;
 	}
 }
